@@ -1,0 +1,136 @@
+{
+	function mk(type, obj) {
+		obj.type = type;
+		return obj;
+	}
+}
+
+Program
+	= __ stmts:Statement* {
+		return stmts;
+	}
+
+Statement
+	//= stmt:Assignment TERM __ { return stmt; }
+	= stmt:SelfSend TERM __ { return stmt; }
+	/ stmt:MessageSend TERM __ { return stmt; }
+
+//Assignment
+//	= target:Ident _ ':=' _ val:RVal {
+//		return mk('assign', {
+//			target 	: target.name,
+//			value 	: val
+//		});
+//	}
+
+RVal
+	= MessageSend
+	/ Expression
+
+SelfSend
+	= message:Message {
+		return mk('self-send', {
+			receiver	: null,
+			selector	: message.selector,
+			method		: '$' + message.selector.replace(/:/g, '$'),
+			args 		: message.args
+		});
+	}
+
+MessageSend
+	= receiver:Expression _ message:Message {
+		return mk('send', {
+			receiver	: receiver,
+			selector	: message.selector,
+			method 		: '$' + message.selector.replace(/:/g, '$'),
+			args 		: message.args
+		});
+	}
+
+Message
+	= ArgMessage
+	/ NoArgMessage
+
+ArgMessage
+	= head:ArgMessagePair tail:(__ TrailingArgMessagePair)* {
+		var all = [head].concat(tail.map(function(t) { return t[1]; }));
+		return {
+			selector: all.map(function(s) { return s[0]; }).join(':') + ':',
+			args: all.map(function(s) { return s[1]; })
+		};
+	}
+
+ArgMessagePair
+	= name:Ident ':' _ value:Expression _ {
+		return [name.name, value];
+	}
+
+TrailingArgMessagePair
+	= name:TrailingIdent ':' _ value:Expression _ {
+		return [name.name, value];
+	}
+
+NoArgMessage
+	= name:Ident _ {
+		return {
+			selector 	: name.name,
+			args 		: []
+		};
+	}
+
+Expression
+	//= v:Block _ 			{ return v; }
+	= v:Boolean _ 			{ return v; }
+	/ v:Integer _ 			{ return v; }
+	/ v:String _ 			{ return v; }
+	/ v:Ident _ 			{ return v; }
+	/ v:Ivar _ 				{ return v; }
+	/ '(' _ v:RVal ')' _ 	{ return v; }
+
+//Block
+//	= '[' __ messages:Statement* ']' {
+//		return mk('block', messages);
+//	}
+	
+Ident
+	= name:$( [A-Za-z_] [A-Za-z0-9_]* ) {
+		return mk('ident', {name: name});
+	}
+
+TrailingIdent
+	= name:$( [A-Z] [A-Za-z0-9_]* ) {
+		return mk('ident', {name: name});
+	}
+
+Ivar
+	= '@' name:$( [A-Za-z_] [A-Za-z0-9_]* ) {
+		return mk('ivar', {name: name});	
+	}
+
+Integer
+	= val:$([0-9]+) {
+		return parseInt(val, 10);
+	}
+
+String
+	= '"' chars:$( [^"]* ) '"' {
+		return chars;
+	}
+
+Boolean
+	= 'true' { return true; }
+	/ 'false' { return false; }
+
+TERM
+	= _ &']'
+	/ _ NL
+
+NL
+	= '\n'
+	/ '\r' '\n'?
+
+_
+	= [ \t]*
+
+__
+	= [ \r\n\t]*

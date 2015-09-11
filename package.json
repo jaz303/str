@@ -1,0 +1,20 @@
+{
+  "name": "cu-script",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "es6-promise": "^2.3.0",
+    "pegjs": "^0.8.0",
+    "tape": "^4.0.0"
+  },
+  "scripts": {
+    "test": "set -e; for t in test/*.js; do node $t; done"
+  },
+  "author": "",
+  "license": "ISC"
+}
