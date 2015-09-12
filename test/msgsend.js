@@ -1,9 +1,11 @@
 require('es6-promise').polyfill();
 
 var test = require('tape');
-var machine = require('../')();
+var createMachine = require('../');
 
 function run(source, opts, cb) {
+
+	var machine = createMachine();
 
     program = machine.compile(source.join("\n") + "\n");
 
@@ -14,7 +16,7 @@ function run(source, opts, cb) {
     if (!env) env = {};
     env = machine.createEnvironment(env);
 
-    machine.evaluate(env, self, program, function(err, res) {
+    machine.context.run(env, self, program, function(err, res) {
         if (err) {
             console.log(err);
             throw err;
